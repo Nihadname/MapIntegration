@@ -15,6 +15,17 @@ const fakeData = [
 const markers = L.markerClusterGroup();
 map.addLayer(markers);
 
+// Initialize routing control with geocoder
+const routeControl = L.Routing.control({
+    waypoints: [],
+    routeWhileDragging: true,
+    geocoder: L.Control.Geocoder.nominatim(),
+    createMarker: function() { return null; } // Disable default marker
+}).addTo(map);
+
+
+let userLocationMarker;
+
 // Function to create and display cards with advanced styling
 function displayCards(data) {
     const cardsContainer = document.getElementById('cards');
@@ -73,9 +84,17 @@ function addMarkers(data) {
     map.fitBounds(markers.getBounds());
 }
 
-// Function to focus on a location on the map with enhanced popup
+// Function to focus on a location on the map and calculate route
 function focusOnLocation(lat, lon, name, description, price, date) {
     map.setView([lat, lon], 13); // Center the map at the specified location
+    if (userLocationMarker) {
+        calculateRoute(userLocationMarker.getLatLng(), [lat, lon]);
+    }
+}
+
+// Function to calculate the route between two points
+function calculateRoute(start, end) {
+    routeControl.setWaypoints([start, L.latLng(end)]);
 }
 
 // Function to handle search
@@ -138,7 +157,7 @@ function addUserLocation() {
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(position => {
             const { latitude, longitude } = position.coords;
-            L.marker([latitude, longitude], { 
+            userLocationMarker = L.marker([latitude, longitude], { 
                 icon: L.icon({ 
                     iconUrl: 'https://example.com/current-location-icon.png', // Replace with your custom icon URL
                     iconSize: [25, 41], 
@@ -154,8 +173,5 @@ function addUserLocation() {
     }
 }
 
-// Call function to add user location
 addUserLocation();
-
-// Load data and display cards on page load
 displayCards(fakeData);
